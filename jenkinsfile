@@ -18,10 +18,8 @@ def automation_repo     = "https://github.com/greyhats13/${repo_name}.git"
 def k6_repo             = "https://github.com/greyhats13/${repo_name}.git"
 
 // ::NOTIFICATIONS
-//def telegram_url        = "https://api.telegram.org/bot1138155717:AAGymcFHYLQy7Edz-eO2A8S6e0GDGVzDBfY/sendMessage"
-//def telegram_chatid     = "-287688877"
-def telegram_url        = "https://api.telegram.org/bot1294113089:AAGIfRq_iAKckaeRgRqXxPwfR3yFpVtEKUw/sendMessage"
-def telegram_chatid     = "-376846743"
+def telegram_url        = "https://api.telegram.org/botxxxxxx:xxxxxxxxxxxxx/sendMessage"
+def telegram_chatid     = "-xxxxxx"
 def slack_colour        = "#BADA55"
 def slack_channel       = "#demo-channel"
 def emails              = "imam.arief.rhmn@gmail.com"
