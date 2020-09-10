@@ -1,0 +1,33 @@
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  #assign the name and namespace metadata using release that we defined when running helm install
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  #define HPA values target
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    #assign the deployment target with release name
+    name: {{ .Release.Name }}
+  #assign the min replica of HPA
+  minReplicas: {{ .Values.autoscaller.replicas.min }}
+  #assign the min replica of HPA
+  maxReplicas: {{ .Values.autoscaller.replicas.max }}
+  #define resources values that will trigger the pod autoscaler
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        #trigger the pod autoscaler if the CPU utilization reached this values
+        averageUtilization: {{ .Values.autoscaller.utilization.cpu }}
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        #trigger the pod autoscaler if the Memory utilization reached this values
+        averageUtilization: {{ .Values.autoscaller.utilization.memory }}

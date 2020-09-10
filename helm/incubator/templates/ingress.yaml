@@ -1,0 +1,37 @@
+#check if the ingress is enabled in helm values.yaml
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := .Release.Name -}}
+{{- $svcPort := .Values.service.port -}}
+{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  #using the relase name for meta data namespace
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "demo.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  #ingress annoation to apply ingress nginx policy
+  annotations:
+    #take the ingress annoation from values.yaml
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  #define the ingress rule and routing
+  rules:
+  {{- range .Values.ingress.hosts }}
+    #define the host to expose the internal services using ingress
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          - path: 
+            backend:
+              #define service name and port to expose the internal service using ingress
+              serviceName: {{ $fullName }}
+              servicePort: {{ $svcPort }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  #using the relase name for meta data and namespace
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  #define the service type (clusterip, nodeport, loadbalancer,etc)
+  type: {{ .Values.service.type }}
+  #define the port, and the service protocol
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.dstPort }}
+      protocol: TCP
+      name: http
+  #define the selector to match with the deployment
+  selector:
+    {{- include "demo.selectorLabels" . | nindent 4 }}

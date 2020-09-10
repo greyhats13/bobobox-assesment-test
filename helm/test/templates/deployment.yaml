@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  #assign the name and namespace metadata using release that we defined when running helm install
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "demo.labels" . | nindent 4 }}
+spec:
+  #define the replocas
+  replicas: {{ .Values.replicaCount }} #take the replicas value from helm values.yaml
+  selector:
+    #define the selector for this deployment, so the services can autodiscover the deployment using this values
+    matchLabels:
+      {{- include "demo.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        #take the pod template key values from helm values.yaml
+        {{- range $key, $value := .Values.podAnnotations }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+      labels:
+        {{- include "demo.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          #define the images values
+          image: {{ .Values.image.repository }}
+          #define the image pull policy
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.configmap }}
+          #Port and protocol that will be used by the microservices
+          ports:
+            - name: http
+              #take container key values from helm values.yaml
+              containerPort: {{ .Values.service.dstPort }}
+              protocol: TCP
+          #resource spesification
+          resources:
+            #take the resources key values from helm values.yaml
+            {{- toYaml .Values.resources | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+             #take the readiness key values from values.yaml
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+      #Node Selector to select which nodes to use when scheduling the pods
+      nodeSelector:
+        #take the nodeSelector key values from values.yaml
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      #credentials that will be used to pull images from private registry
+      imagePullSecrets:
+      - name: {{ .Values.imagePullSecrets }}

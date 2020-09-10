@@ -1,0 +1,131 @@
+# Default values for demo.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+#assign the pod annoation values
+podAnnotations:
+  #assign proimetheus scare so prometheus can get the services metrics
+  prometheus.io/scrape: "true"
+
+image:
+  #assign the image repository
+  repository: dkr.ecr.ap-southeast-1.amazonaws.com/gomicroservices:release
+  #assign the image pull pilicy
+  pullPolicy: Always
+#assign the ECR image pull secrets
+imagePullSecrets: aws-ecr-credential
+
+nameOverride: ""
+fullnameOverride: ""
+#assign the associated configmap
+configmap: demo
+#assign the services value type, port and target port
+service:
+  type: ClusterIP
+  port: 80
+  dstPort: 8080
+
+#assign the ingress values
+ingress:
+  #enable ingress for this service
+  enabled: true
+  #ingress annoation key values
+  annotations:
+    #using beta ingress class
+    kubernetes.io/ingress.class: demo
+    # nginx.ingress.kubernetes.io/rewrite-target: /$1
+    #assign headers that will be allowed to pass the ingress
+    nginx.ingress.kubernetes.io/cors-allow-headers: "x-app-version,x-api-key,Authorization"
+    #ingress script to block unrecognized path and user agents and drop the packages with 404 and 405 error
+    nginx.ingress.kubernetes.io/server-snippet: |-
+      location ~* ^/(metrics|health|liveness|debug) {
+      error_page 404 /404.html;
+      }
+      if ($http_user_agent !~* "(okhttp|Go-http|Java)" ) {
+        return 405; 
+      }
+  hosts:
+    #define the host values
+    - host: demo.staging.api.blast.co.id
+      paths: []
+
+#define the resources values
+resources:
+  limits:
+    cpu: 600m
+    memory: 600Mi
+  requests:
+    cpu: 400m
+    memory: 256Mi
+#asign the autoscaler values
+autoscaller:
+  replicas:
+    min: 4
+    max: 20
+  utilization:
+    cpu: 75
+    memory: 75
+
+#assign the liveness probe policy values
+livenessProbe:
+  failureThreshold: 3
+  httpGet:
+    path: /liveness
+    port: 8080
+    scheme: HTTP
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  successThreshold: 1
+  timeoutSeconds: 3
+#assign the readiness proibe policy values
+readinessProbe:
+  failureThreshold: 3
+  httpGet:
+    path: /health
+    port: 8080
+    scheme: HTTP
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  successThreshold: 1
+  timeoutSeconds: 3
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+    # name: demo-sa
+    # namespace: demo
+    # secrets:
+    # - name: demo-secret
+
+# podSecurityContext: {}
+  # fsGroup: 2000
+
+# securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+    # kubernetes.io/tls-acme: "true"
+  # hosts:
+  #   - host: chart-example.local
+  #     paths: []
+  # tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+#define the node selector key values, so pod will only schelued in this kubernetes nodes
+nodeSelector:
+  target: demo
+
+# tolerations: []
+
+# affinity: {}
