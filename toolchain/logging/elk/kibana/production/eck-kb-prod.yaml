@@ -1,0 +1,28 @@
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: eck
+  namespace: eck
+spec:
+  config:
+    elasticsearch.requestTimeout: 900000
+    xpack.encryptedSavedObjects.encryptionKey: QUsgfxwiNMvf562ZGB4RD1TUSQDfZB6Nrf0jDpJsOfux2Qo1iMhQFOHkOFgLUwu4
+    xpack.reporting.encryptionKey: QUsgfxwiNMvf562ZGB4RD1TUSQDfZB6Nrf0jDpJsOfux2Qo1iMhQFOHkOFgLUwu4
+    kibana.autocompleteTerminateAfter: 900000
+  count: 3
+  podTemplate:
+    spec:
+      containers:
+        - name: kibana
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 2000Mi
+            requests:
+              cpu: 1000m
+              memory: 2000Mi
+      nodeSelector:
+        target: toolchain
+  elasticsearchRef:
+    name: eck
+  version: 7.9.0

@@ -1,0 +1,132 @@
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: filebeat-prod
+spec:
+  type: filebeat
+  version: 7.9.0
+  # elasticsearchRef:
+  #   name: eck
+  #   # Currently this setting requires Kibana to have TLS enabled.
+  #   # See https://github.com/elastic/cloud-on-k8s/issues/3523 for more information.
+  kibanaRef:
+    name: eck
+  config:
+    filebeat:
+      autodiscover:
+        providers:
+        - type: kubernetes
+          host: ${HOSTNAME}
+          hints:
+            enabled: true
+            default_config:
+              type: container
+              paths:
+              - /var/log/containers/*${data.kubernetes.container.id}.log
+    output.logstash:
+      hosts: 'logstash-prod-logstash.eck.svc.cluster.local:5044'
+    setup:
+      kibana:
+        enabled: true
+        protocol: https
+        username: elastic
+        password: 7SU22ziwy2Ono030s0mbC79c
+        ssl:
+          certificate_authorities:
+          - /usr/share/filebeat/config/elasticsearch-ca/tls.crt
+          enabled: true
+          verification_mode: none
+      dashboards:
+        enabled: true
+        index: filebeat-*
+        retry.interval: 3
+        retry.maximum: 3
+      template:
+        name: "filebeat"
+        pattern: "filebeat-*"
+        overwrite: true
+        settings:
+          index.number_of_shards: 3
+          index.number_of_replicas: 0
+          index.refresh_interval: 30s
+    processors:
+    - add_cloud_metadata: {}
+    - add_host_metadata: {}
+  daemonSet:
+    podTemplate:
+      spec:
+        serviceAccountName: filebeat
+        automountServiceAccountToken: true
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirstWithHostNet
+        hostNetwork: true # Allows to provide richer host metadata
+        securityContext:
+          runAsUser: 0
+          # If using Red Hat OpenShift uncomment this:
+          #privileged: true
+        containers:
+        - name: filebeat
+          resources:
+            limits:
+              cpu: 200m
+              memory: 200Mi
+            requests:
+              cpu: 10m
+              memory: 10Mi
+          volumeMounts:
+          - name: varlogcontainers
+            mountPath: /var/log/containers
+          - name: varlogpods
+            mountPath: /var/log/pods
+          - name: varlibdockercontainers
+            mountPath: /var/lib/docker/containers
+          - mountPath: /usr/share/filebeat/config/elasticsearch-ca
+            name: elasticsearch-ca
+        volumes:
+        - name: varlogcontainers
+          hostPath:
+            path: /var/log/containers
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers
+        - name: elasticsearch-ca
+          secret:
+            defaultMode: 420
+            optional: false
+            secretName: eck-es-http-certs-public
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: filebeat
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources:
+  - namespaces
+  - pods
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat
+  namespace: eck
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: filebeat
+subjects:
+- kind: ServiceAccount
+  name: filebeat
+  namespace: eck
+roleRef:
+  kind: ClusterRole
+  name: filebeat
+  apiGroup: rbac.authorization.k8s.io

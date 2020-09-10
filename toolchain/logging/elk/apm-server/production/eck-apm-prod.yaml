@@ -1,0 +1,179 @@
+---
+apiVersion: apm.k8s.elastic.co/v1
+kind: ApmServer
+metadata:
+  name: eck
+  namespace: eck
+spec:
+  config:
+    apm-server:
+      ilm:
+        enabled: true
+        setup:
+          enabled: true
+          overwrite: true
+          require_policy: true
+          mapping:
+            - event_type: "error"
+              policy_name: "apm-error-span-profile-policy"
+              index_suffix: "prod"
+            - event_type: "span"
+              policy_name: "apm-error-span-profile-policy"
+              index_suffix: "prod"
+            - event_type: "transaction"
+              policy_name: "apm-transaction-metric-policy"
+              index_suffix: "prod"
+            - event_type: "metric"
+              policy_name: "apm-transaction-metric-policy"
+              index_suffix: "prod"
+            - event_type: "profile"
+              policy_name: "apm-error-span-profile-policy"
+              index_suffix: "prod"
+          policies:
+            - name: "apm-error-span-profile-policy"
+              policy:
+                phases:
+                  hot:
+                    actions:
+                      rollover:
+                        max_size: "150gb"
+                        max_age: "7d"
+                      set_priority:
+                        priority: 100
+                  warm:
+                    actions:
+                      allocate:
+                        number_of_replicas: 0
+                        include: {}
+                        exclude: {}
+                        require:
+                          data: "warm"
+                      shrink:
+                        number_of_shards: 1
+                      forcemerge:
+                        max_num_segments: 9
+                      set_priority:
+                        priority: 50
+                      readonly: {}
+                  cold:
+                    min_age: "14d"
+                    actions:
+                      allocate:
+                        number_of_replicas: 0
+                        include: {}
+                        exclude: {}
+                        require:
+                          data: "cold"
+                      set_priority:
+                        priority: 10
+                      freeze: {}
+                  delete:
+                    min_age: "30d"
+                    actions:
+                      delete: {}
+            - name: "apm-transaction-metric-policy"
+              policy:
+                phases:
+                  hot:
+                    actions:
+                      rollover:
+                        max_size: "150gb"
+                        max_age: "1d"
+                      set_priority:
+                        priority: 100
+                  warm:
+                    actions:
+                      allocate:
+                        number_of_replicas: 0
+                        include: {}
+                        exclude: {}
+                        require:
+                          data: "warm"
+                      shrink:
+                        number_of_shards: 1
+                      forcemerge:
+                        max_num_segments: 9
+                      set_priority:
+                        priority: 50
+                      readonly: {}
+                  cold:
+                    min_age: "7d"
+                    actions:
+                      allocate:
+                        number_of_replicas: 0
+                        include: {}
+                        exclude: {}
+                        require:
+                          data: "cold"
+                      set_priority:
+                        priority: 10
+                      freeze: {}
+                  delete:
+                    min_age: "30d"
+                    actions:
+                      delete: {}
+      kibana:
+        enabled: true
+        host: eck-kb-http.eck.svc.cluster.local:5601
+        password: 7SU22ziwy2Ono030s0mbC79c
+        protocol: https
+        ssl.certificate_authorities:
+          - /usr/share/apm-server/config/elasticsearch-ca/tls.crt
+        ssl.enabled: true
+        ssl.verification_mode: none
+        username: elastic
+    output:
+      # elasticsearch:
+      #   bulk_max_size: 20480
+      #   hosts:
+      #     - eck-es-http.eck.svc.cluster.local:9200
+      #   max_retries: 0
+      #   protocol: https
+      #   queue.mem.events: 245760
+      #   ssl.certificate_authorities:
+      #     - /usr/share/apm-server/config/elasticsearch-ca/tls.crt
+      #   ssl.enabled: true
+      #   ssl.verification_mode: none
+      #   worker: 12
+      logstash:
+        hosts: 'logstash-prod-logstash.eck.svc.cluster.local:5044'
+    setup.template:
+      enabled: true
+      name: "apm"
+      pattern: "apm-*"
+      overwrite: true
+      settings:
+        index:
+          number_of_shards: 6
+          number_of_replicas: 0
+          refresh_interval: 30s
+          sort:
+            field: '@timestamp'
+            order: desc
+  count: 3
+  elasticsearchRef:
+    name: eck
+  podTemplate:
+    spec:
+      containers:
+        - name: apm-server
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 2000Mi
+            requests:
+              cpu: 200m
+              memory: 2000Mi
+          volumeMounts:
+            - mountPath: /usr/share/apm-server/config/elasticsearch-ca
+              name: elasticsearch-ca
+              readOnly: true
+      nodeSelector:
+        alpha.eksctl.io/nodegroup-name: toolchain
+      volumes:
+        - name: elasticsearch-ca
+          secret:
+            defaultMode: 420
+            optional: false
+            secretName: eck-apm-es-ca
+  version: 7.9.0

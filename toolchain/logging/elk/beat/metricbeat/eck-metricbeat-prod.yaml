@@ -1,0 +1,314 @@
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: metricbeat-tool
+spec:
+  type: metricbeat
+  version: 7.9.0
+  # elasticsearchRef:
+  #   name: eck
+    # Currently this setting requires Kibana to have TLS enabled.
+    # See https://github.com/elastic/cloud-on-k8s/issues/3523 for more information.
+  kibanaRef:
+    name: eck
+  config:
+    output.logstash:
+      hosts: 'logstash-prod-logstash.eck.svc.cluster.local:5044'
+    setup:
+      ilm:
+        enabled: true
+        rollover_alias: "metricbeat"
+        policy_name: "metricbeat-%{[agent.version]}"
+        pattern: "{now/d}-000001"
+        policy_file: config/ilm-policy.json
+        # check_exists: false
+        overwrite: true
+      dashboards:
+        enabled: true
+        index: metricbeat-*
+        retry.interval: 5
+        retry.maximum: 3
+      kibana:
+        enabled: true
+        protocol: https
+        username: elastic
+        password: 7SU22ziwy2Ono030s0mbC79c
+        ssl:
+          certificate_authorities:
+          - /usr/share/metricbeat/config/elasticsearch-ca/tls.crt
+          enabled: true
+          verification_mode: none
+      template:
+        name: "metricbeat"
+        pattern: "metricbeat-*"
+        overwrite: true
+        settings:
+          index:
+            lifecycle:
+              name: metricbeat
+              rollover_alias: metricbeat
+            refresh_interval: 30s
+            number_of_shards: '6'
+            sort:
+              field: "@timestamp"
+              order: desc
+            number_of_replicas: '0'
+        mappings:
+          _doc:
+            _source: {}
+            _meta: {}
+            properties:
+              "@timestamp":
+                type: date
+    metricbeat:
+      autodiscover:
+        providers:
+        - hints:
+            default_config: {}
+            enabled: "true"
+          host: ${HOSTNAME}
+          type: kubernetes
+      modules:
+      - module: system
+        period: 30s
+        metricsets:
+        - cpu
+        - load
+        - memory
+        - network
+        - process
+        - process_summary
+        process:
+          include_top_n:
+            by_cpu: 5
+            by_memory: 5
+        processes:
+        - .*
+      - module: system
+        period: 30s
+        metricsets:
+        - filesystem
+        - fsstat
+        processors:
+        - drop_event:
+            when:
+              regexp:
+                system:
+                  filesystem:
+                    mount_point: ^/(sys|cgroup|proc|dev|etc|host|lib)($|/)
+      - module: kubernetes
+        period: 30s
+        host: ${HOSTNAME}
+        hosts:
+        - https://${HOSTNAME}:10250
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        ssl:
+          verification_mode: none
+        metricsets:
+        - node
+        - system
+        - pod
+        - container
+        - volume
+      - module: aws
+        enabled: true
+        period: 15m
+        metricsets:
+          - transitgateway
+        regions:
+          - ap-southeast-1
+        access_key_id: 'xxxxxxxxxxxxxxx'
+        secret_access_key: 'xxxxxxxxxxxxxxxxxxxxxxxxxx'
+        session_token: ''
+      - module: aws
+        enabled: true
+        period: 15m
+        metricsets:
+          - vpn
+        regions:
+          - ap-southeast-1
+      - module: aws
+        enabled: true
+        period: 12h
+        metricsets:
+          - billing
+        regions:
+          - us-east-1
+      - module: aws
+        enabled: true
+        period: 15m
+        metricsets:
+          - usage
+        regions:
+      - module: aws
+        enabled: true
+        period: 15m
+        metricsets:
+          - sns
+        regions:
+          - ap-southeast-1
+      - module: aws
+        enabled: true
+        period: 15m
+        metricsets:
+          - sqs
+        regions:
+          - ap-southeast-1
+      - module: aws
+        enabled: true
+        period: 24h
+        metricsets:
+          - s3_request
+        regions:
+          - ap-southeast-1
+      - module: aws
+        enabled: true
+        period: 24h
+        metricsets:
+          - s3_daily_storage
+        regions:
+          - ap-southeast-1
+      - module: aws
+        enabled: true
+        period: 15m
+        metricsets:
+          - ec2
+        regions:
+          - ap-southeast-1
+      - module: aws
+        enabled: true
+        period: 15m
+        metricsets:
+          - ebs
+        regions:
+          - ap-southeast-1
+      - module: aws
+        enabled: true
+        period: 15m
+        metricsets:
+          - natgateway
+        regions:
+          - ap-southeast-1
+      - module: aws
+        enabled: true
+        period: 15m
+        metricsets:
+          - elb
+        regions:
+          - ap-southeast-1
+    processors:
+    - add_cloud_metadata: {}
+    - add_host_metadata: {}
+  daemonSet:
+    podTemplate:
+      spec:
+        serviceAccountName: metricbeat
+        automountServiceAccountToken: true # some older Beat versions are depending on this settings presence in k8s context
+        containers:
+        - args:
+          - -e
+          - -c
+          - /etc/beat.yml
+          - -system.hostfs=/hostfs
+          name: metricbeat
+          resources:
+            limits:
+              cpu: 200m
+              memory: 200Mi
+            requests:
+              cpu: 10m
+              memory: 10Mi
+          volumeMounts:
+          - mountPath: /hostfs/sys/fs/cgroup
+            name: cgroup
+          - mountPath: /var/run/docker.sock
+            name: dockersock
+          - mountPath: /hostfs/proc
+            name: proc
+          - mountPath: /usr/share/metricbeat/config/elasticsearch-ca
+            name: elasticsearch-ca
+            readOnly: true
+        dnsPolicy: ClusterFirstWithHostNet
+        hostNetwork: true # Allows to provide richer host metadata
+        securityContext:
+          runAsUser: 0
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - hostPath:
+            path: /sys/fs/cgroup
+          name: cgroup
+        - hostPath:
+            path: /var/run/docker.sock
+          name: dockersock
+        - hostPath:
+            path: /proc
+          name: proc
+        - name: elasticsearch-ca
+          secret:
+            defaultMode: 420
+            optional: false
+            secretName: metricbeat-tool-beat-es-ca
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metricbeat-tool
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - namespaces
+  - events
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - "extensions"
+  resources:
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  - deployments
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes/stats
+  verbs:
+  - get
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metricbeat
+  namespace: eck
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: metricbeat
+subjects:
+- kind: ServiceAccount
+  name: metricbeat
+  namespace: eck
+roleRef:
+  kind: ClusterRole
+  name: metricbeat
+  apiGroup: rbac.authorization.k8s.io

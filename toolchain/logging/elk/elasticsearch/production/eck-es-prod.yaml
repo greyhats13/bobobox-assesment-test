@@ -1,0 +1,289 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: eck
+  namespace: eck
+spec:
+  nodeSets:
+    - config:
+        node.data: false
+        node.ingest: false
+        node.master: true
+        node.ml: false
+        cluster.initial_master_nodes: [eck-es-master-0, eck-es-master-1, eck-es-master-2]
+        xpack.monitoring.collection.enabled: true
+        node.processors: 2
+      count: 3
+      name: master
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              resources:
+                limits:
+                  memory: 16000Mi
+                  cpu: 2000m
+                requests:
+                  memory: 15000Mi
+                  cpu: 1500m
+              env:
+                - name: ES_JAVA_OPTS
+                  value: "-Xms8g -Xmx8g"
+          initContainers:
+            - name: sysctl
+              command:
+                - sh
+                - "-c"
+                - |
+                  sysctl -w vm.max_map_count=262144
+                  bin/elasticsearch-plugin remove repository-s3
+                  bin/elasticsearch-plugin install --batch repository-s3
+                  echo $AWS_ACCESS_KEY_ID | bin/elasticsearch-keystore add --stdin --force s3.client.default.access_key
+                  echo $AWS_SECRET_ACCESS_KEY | bin/elasticsearch-keystore add --stdin --force s3.client.default.secret_key
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      key: access-key
+                      name: demo-s3-keys
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: secret-key
+                      name: demo-s3-keys
+              securityContext:
+                privileged: true
+          nodeSelector:
+            target: ES-Master
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 10Gi
+            storageClassName: gp2
+    - config:
+        node.data: true
+        node.ingest: true
+        node.master: false
+        node.ml: true
+        xpack.monitoring.collection.enabled: true
+        node.attr.data: hot
+        thread_pool.snapshot.max: 4
+        thread_pool.write.size: 9
+        thread_pool.write.queue_size: 5000
+        thread_pool.search.size: 13
+        thread_pool.search.queue_size: 4000
+        indices.memory.index_buffer_size: 35%
+        indices.queries.cache.size: 20%
+        indices.requests.cache.size: 4%
+        indices.breaker.total.use_real_memory: true
+        indices.breaker.total.limit: 95%
+        indices.fielddata.cache.size: 30%
+        indices.requests.cache.expire: 1h
+        node.processors: 8
+      count: 3
+      name: data-hot
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              resources:
+                limits:
+                  memory: 64000Mi
+                  cpu: 8000m
+                requests:
+                  memory: 62000Mi
+                  cpu: 7000m
+              env:
+                - name: ES_JAVA_OPTS
+                  value: "-Xms29g -Xmx29g"
+          initContainers:
+            - name: sysctl
+              command:
+                - sh
+                - "-c"
+                - |
+                  sysctl -w vm.max_map_count=262144
+                  swapoff -a
+                  bin/elasticsearch-plugin remove repository-s3
+                  bin/elasticsearch-plugin install --batch repository-s3
+                  echo $AWS_ACCESS_KEY_ID | bin/elasticsearch-keystore add --stdin --force s3.client.default.access_key
+                  echo $AWS_SECRET_ACCESS_KEY | bin/elasticsearch-keystore add --stdin --force s3.client.default.secret_key
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      key: access-key
+                      name: demo-s3-keys
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: secret-key
+                      name: demo-s3-keys
+              securityContext:
+                privileged: true
+          nodeSelector:
+            target: ES-Data-Hot
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 100Gi
+            storageClassName: io1
+    - config:
+        node.data: true
+        node.ingest: true
+        node.master: false
+        node.ml: false
+        node.transform: true
+        xpack.monitoring.collection.enabled: true
+        node.attr.data: warm
+        thread_pool.snapshot.max: 4
+        thread_pool.write.size: 9
+        thread_pool.write.queue_size: 5000
+        thread_pool.search.size: 13
+        thread_pool.search.queue_size: 4000
+        indices.queries.cache.size: 20%
+        indices.requests.cache.size: 4%
+        indices.memory.index_buffer_size: 35%
+        indices.breaker.total.use_real_memory: true
+        indices.breaker.total.limit: 95%
+        indices.fielddata.cache.size: 30%
+        indices.requests.cache.expire: 1h
+        node.processors: 8
+      count: 3
+      name: data-warm
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              resources:
+                limits:
+                  memory: 32000Mi
+                  cpu: 4000m
+                requests:
+                  memory: 30000Mi
+                  cpu: 3000m
+              env:
+                - name: ES_JAVA_OPTS
+                  value: "-Xms15g -Xmx15g"
+          initContainers:
+            - name: sysctl
+              command:
+                - sh
+                - "-c"
+                - |
+                  sysctl -w vm.max_map_count=262144
+                  swapoff -a
+                  bin/elasticsearch-plugin remove repository-s3
+                  bin/elasticsearch-plugin install --batch repository-s3
+                  echo $AWS_ACCESS_KEY_ID | bin/elasticsearch-keystore add --stdin --force s3.client.default.access_key
+                  echo $AWS_SECRET_ACCESS_KEY | bin/elasticsearch-keystore add --stdin --force s3.client.default.secret_key
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      key: access-key
+                      name: demo-s3-keys
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: secret-key
+                      name: demo-s3-keys
+              securityContext:
+                privileged: true
+          nodeSelector:
+            target: ES-Data-Warm
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1000Gi
+            storageClassName: gp2
+    - config:
+        node.data: true
+        node.ingest: true
+        node.master: false
+        node.ml: false
+        node.transform: true
+        xpack.monitoring.collection.enabled: true
+        node.attr.data: cold
+        thread_pool.snapshot.max: 2
+        thread_pool.write.size: 5
+        thread_pool.write.queue_size: 2000
+        thread_pool.search.size: 7
+        thread_pool.search.queue_size: 4000
+        indices.queries.cache.size: 20%
+        indices.requests.cache.size: 4%
+        indices.memory.index_buffer_size: 20%
+        indices.breaker.total.use_real_memory: true
+        indices.breaker.total.limit: 95%
+        indices.fielddata.cache.size: 20%
+        indices.requests.cache.expire: 1h
+        node.processors: 4
+      count: 6
+      name: data-cold
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              resources:
+                limits:
+                  memory: 16000Mi
+                  cpu: 2000m
+                requests:
+                  memory: 15000Mi
+                  cpu: 1500m
+              env:
+                - name: ES_JAVA_OPTS
+                  value: "-Xms8g -Xmx8g"
+          initContainers:
+            - name: sysctl
+              command:
+                - sh
+                - "-c"
+                - |
+                  sysctl -w vm.max_map_count=262144
+                  swapoff -a
+                  bin/elasticsearch-plugin remove repository-s3
+                  bin/elasticsearch-plugin install --batch repository-s3
+                  echo $AWS_ACCESS_KEY_ID | bin/elasticsearch-keystore add --stdin --force s3.client.default.access_key
+                  echo $AWS_SECRET_ACCESS_KEY | bin/elasticsearch-keystore add --stdin --force s3.client.default.secret_key
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      key: access-key
+                      name: demo-s3-keys
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: secret-key
+                      name: demo-s3-keys
+              securityContext:
+                privileged: true
+          nodeSelector:
+            target: ES-Data-Cold
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 3000Gi
+            storageClassName: st1
+  version: 7.9.0
