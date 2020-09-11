@@ -33,7 +33,7 @@ ingress:
   #ingress annoation key values
   annotations:
     #using beta ingress class
-    kubernetes.io/ingress.class: demo
+    kubernetes.io/ingress.class: 
     # nginx.ingress.kubernetes.io/rewrite-target: /$1
     #assign headers that will be allowed to pass the ingress
     nginx.ingress.kubernetes.io/cors-allow-headers: "x-app-version,x-api-key,Authorization"
