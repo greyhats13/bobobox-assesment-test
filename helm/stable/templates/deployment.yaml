@@ -31,7 +31,9 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           envFrom:
             - configMapRef:
-                name: {{ .Values.configmap }}
+                name: {{ .Release.Namespace }}
+            - secretRef:
+                name: {{ .Release.Namespace }}
           #Port and protocol that will be used by the microservices
           ports:
             - name: http

@@ -13,13 +13,31 @@ image:
   repository: dkr.ecr.ap-southeast-1.amazonaws.com/gomicroservices:release
   #assign the image pull pilicy
   pullPolicy: Always
-#assign the ECR image pull secrets
+#assign the ECR image pull secrets id, secret is stored in jenkins credentials
 imagePullSecrets: aws-ecr-credential
 
 nameOverride: ""
 fullnameOverride: ""
 #assign the associated configmap
-configmap: demo
+appConfigMap:
+  MONGO_DB: demo
+  MONGO_DRIVER: mongodb
+  MONGO_HOST: 168.99.25.23
+  MONGO_PORT: "27017"
+  MONGO_URI: mongodb+srv://xxxxxxx:XXXXXXXXX@axisnet-production-apps.jvfpe.mongodb.net/test?retryWrites=true&w=majority
+  MONGO_URI_TRX: mongodb+srv://xxxxxxx:XXXXXXXXX:XXXXXXXXX@axisnet-production-trxl.jvfpe.mongodb.net/test?retryWrites=true&w=majority
+  MONGO_USER: D3m0-4pps
+  ELASTIC_APM_ENVIRONMENT: Production
+  ELASTIC_APM_SERVER_URL: https://eck-apm-http.eck.svc.cluster.local:8200
+  ELASTIC_APM_VERIFY_SERVER_CERT: "false"
+  ELASTIC_HOST: http://localhost
+  ELASTIC_PORT: "9200"
+  ELASTIC_URI: https://eck-es-http.eck.svc.cluster.local
+  ELASTIC_USERNAME: elastic
+appSecret:
+  MONGO_PASSWORD: xxxxxxxxxxxxx
+  ELASTIC_APM_SECRET_TOKEN: xxxxxxxxxxxxxxxxx
+  ELASTIC_PASSWORD: xxxxxxxxxxxxxxxxxxx
 #assign the services value type, port and target port
 service:
   type: ClusterIP
@@ -33,7 +51,7 @@ ingress:
   #ingress annoation key values
   annotations:
     #using beta ingress class
-    kubernetes.io/ingress.class: 
+    kubernetes.io/ingress.class: release
     # nginx.ingress.kubernetes.io/rewrite-target: /$1
     #assign headers that will be allowed to pass the ingress
     nginx.ingress.kubernetes.io/cors-allow-headers: "x-app-version,x-api-key,Authorization"
@@ -47,7 +65,7 @@ ingress:
       }
   hosts:
     #define the host values
-    - host: demo.staging.api.blast.co.id
+    - host: demo.api.blast.co.id
       paths: []
 
 #define the resources values
