@@ -399,11 +399,11 @@ master:
     # Set this path to jenkinsUriPrefix above or use annotations to rewrite path
     # path: "/jenkins"
     # configures the hostname e.g. jenkins.example.com
-    hostName: jenkins.blast.co.id
+    hostName: jenkins.bobobox.co.id
     tls:
       - secretName: jenkins-tls
         hosts:
-          - jenkins.blast.co.id
+          - jenkins.bobobox.co.id
 
   # If you're running on GKE and need to configure a backendconfig
   # to finish ingress setup, use the following values.

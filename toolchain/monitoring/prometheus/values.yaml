@@ -122,7 +122,7 @@ alertmanager:
     ## Must be provided if Ingress is enabled
     ##
     hosts:
-      - alertmanager.blast.co.id
+      - alertmanager.bobobox.co.id
     #   - domain.com/alertmanager
 
     ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
@@ -138,7 +138,7 @@ alertmanager:
     tls:
       - secretName: prometheus-alerts-tls
         hosts:
-          - alertmanager.blast.co.id
+          - alertmanager.bobobox.co.id
 
   ## Alertmanager Deployment Strategy type
   # strategy:
@@ -589,7 +589,7 @@ server:
 
   ## External URL which can access alertmanager
   ## Maybe same with Ingress host name
-  baseURL: "https://prometheus.blast.co.id"
+  baseURL: "https://prometheus.bobobox.co.id"
 
   ## Additional server container environment variables
   ##
@@ -707,7 +707,7 @@ server:
     ## Must be provided if Ingress is enabled
     ##
     hosts:
-      - prometheus.blast.co.id
+      - prometheus.bobobox.co.id
     #   - domain.com/prometheus
 
     ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.
@@ -723,7 +723,7 @@ server:
     tls:
       - secretName: prometheus-server-tls
         hosts:
-          - prometheus.blast.co.id
+          - prometheus.bobobox.co.id
 
   ## Server Deployment Strategy type
   # strategy:
@@ -1001,7 +1001,7 @@ pushgateway:
     ## Must be provided if Ingress is enabled
     ##
     hosts:
-      - pushgateway.blast.co.id
+      - pushgateway.bobobox.co.id
     #   - domain.com/pushgateway
 
     ## Extra paths to prepend to every host configuration. This is useful when working with annotation based services.

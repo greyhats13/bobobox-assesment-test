@@ -65,7 +65,7 @@ ingress:
       }
   hosts:
     #define the host values
-    - host: demo.staging.api.blast.co.id
+    - host: demo.staging.api.bobobox.co.id
       paths: []
 
 #define the resources values

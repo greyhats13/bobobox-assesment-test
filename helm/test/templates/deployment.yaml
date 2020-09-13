@@ -29,6 +29,7 @@ spec:
           image: {{ .Values.image.repository }}
           #define the image pull policy
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          #set an reference for configmap and secret of environment variables to get the values for the apps.
           envFrom:
             - configMapRef:
                 name: {{ .Release.Namespace }}

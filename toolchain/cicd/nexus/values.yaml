@@ -98,7 +98,7 @@ nexusProxy:
   # labels: {}
   env:
     nexusDockerHost:
-    nexusHttpHost: nexus.blast.co.id
+    nexusHttpHost: nexus.bobobox.co.id
     enforceHttps: false
     cloudIamAuthEnabled: false
 ## If cloudIamAuthEnabled is set to true uncomment the variables below and remove this line
@@ -193,7 +193,7 @@ ingress:
     secretName: nexus-tls
   # Specify custom rules in addition to or instead of the nexus-proxy rules
   rules:
-  - host: nexus.blast.co.id
+  - host: nexus.bobobox.co.id
     http:
       paths:
       - backend:

@@ -16,7 +16,7 @@ metadata:
   namespace: eck
 spec:
   rules:
-  - host: apm.blast.co.id
+  - host: apm.bobobox.co.id
     http:
       paths:
       - backend:
@@ -25,5 +25,5 @@ spec:
         path: /
   tls:
   - hosts:
-    - apm.blast.co.id
+    - apm.bobobox.co.id
     secretName: apm-tls
