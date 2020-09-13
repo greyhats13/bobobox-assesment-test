@@ -24,8 +24,8 @@ appConfigMap:
   MONGO_DRIVER: mongodb
   MONGO_HOST: 168.99.25.23
   MONGO_PORT: "27017"
-  MONGO_URI: mongodb+srv://xxxxxxx:XXXXXXXXX@axisnet-production-apps.jvfpe.mongodb.net/test?retryWrites=true&w=majority
-  MONGO_URI_TRX: mongodb+srv://xxxxxxxx:XXXXXXXXX@axisnet-production-trxl.jvfpe.mongodb.net/test?retryWrites=true&w=majority
+  MONGO_URI: mongodb+srv://xxxxxxx:XXXXXXXXX@bobobox-production-apps.jvfpe.mongodb.net/test?retryWrites=true&w=majority
+  MONGO_URI_TRX: mongodb+srv://xxxxxxxx:XXXXXXXXX@bobobox-production-trxl.jvfpe.mongodb.net/test?retryWrites=true&w=majority
   MONGO_USER: D3m0-4pps
   ELASTIC_APM_ENVIRONMENT: Production
   ELASTIC_APM_SERVER_URL: https://eck-apm-http.eck.svc.cluster.local:8200
