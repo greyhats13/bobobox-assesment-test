@@ -1,7 +1,10 @@
 # bobobox-assesment-test
 Bobobox assestment test for demo only.
-Link for google docs: https://docs.google.com/document/d/1P4lVhXNzerJrFnpjGT9FfnRJRi7oGxHoja_o5LEya6A/edit?usp=sharing
-Link for project plan and timeline: https://drive.google.com/file/d/1bDTClReaAN4vRv7JZlE1kJXXuyIlJ8qL/view?usp=sharing
+Link for google docs: 
+https://docs.google.com/document/d/1P4lVhXNzerJrFnpjGT9FfnRJRi7oGxHoja_o5LEya6A/edit?usp=sharing
+
+Link for project plan and timeline: 
+https://drive.google.com/file/d/1bDTClReaAN4vRv7JZlE1kJXXuyIlJ8qL/view?usp=sharing
 
 Bobobox assessment test consist of the following scopes:
 - CI/CD Setup of sample IBM Golang microservices in Jenkinsfile. CI/CD Design can be seen here: https://drive.google.com/file/d/18RQI4A0GtDDtYc-aj9_p8bUhe0zpqCMt/view?usp=sharing
